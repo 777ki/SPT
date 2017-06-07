@@ -38,4 +38,15 @@ def auto_test():
         print decode_spthash_flex(code)
 
 auto_test()
+
+code=encode_spthash_flex(23.023, 132.2344, 1496811929)
+print code
+print decode_spthash_flex(code)
+code=encode_spthash_flex(23.023, 132.2344, 1496811929, "2017-06-01")
+print code
+print decode_spthash_flex(code, "2017-06-01")
+code=encode_spthash_flex(23.023, 132.2344, 1496811929, "2018-06-01")
+print code
+print decode_spthash_flex(code, "2018-06-01")
+
 gen_all_range()

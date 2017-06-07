@@ -1,35 +1,52 @@
 
 # coding: utf-8
-
-__base32 = '0123456789bcdefghjkmnpqrstuvwxyz'
+import time
+__base32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 __decodemap = { }
 for i in range(len(__base32)):
     __decodemap[__base32[i]] = i
 del i
 
-def time_coordinate(t):
-    import time
-    pole_st = time.strptime("2012-12-21","%Y-%m-%d")
+def time_coordinate(t, default_midtime="2016-06-01", year_range=4, flags=True):
+    def isnumeric(s):
+        return type(s) == type(1) or type(s) == type(1.1)
+
+    if not isnumeric(t):
+        raise Exception("time param is must be a number or a Object that can be converted to a number")
+
+    pole_st = time.strptime(default_midtime,"%Y-%m-%d")
     midtime=time.mktime(pole_st)
     
     lst = list(pole_st)
-    lst[0]=lst[0]-5 
+    lst[0]=lst[0]-year_range/2
     stime = time.mktime(lst)
-    return (t - midtime) *(180.0/(midtime - stime))
+    if flags:
+        return (t - midtime) *(180.0/(midtime - stime)) #2 years seconds to 180 pice, per pice (5*365*86400)/180
+    else:
+        return t / (180.0 / (midtime - stime)) + midtime
 
 
-#import time
-#time.time()
-#time_coordinate(time.mktime(time.strptime("1992-12-21", "%Y-%m-%d")))
+def encode_spthash_flex(latitude, longitude, time, default_midtime="2016-06-01", year_range=4, precision=30):
+    time_coords = time_coordinate(time, default_midtime, year_range)
+    return encode_spthash(latitude, longitude, time_coords, precision)
 
-def encode_spthash(latitude, longitude, time, precision=16):
+def decode_spthash_flex(code, default_midtime="2016-06-01", year_range=4, precision=30):
+    lat, lon, time_coords, lat_err, lon_err, time_err = decode_spthash(code)
+    
+    time = time_coordinate(time_coords, default_midtime, year_range, False)
+    return lat, lon, time, lat_err, lon_err, time_err
+
+
+
+
+def encode_spthash(latitude, longitude, time, precision=30):
     """
     16 char common 90bit infomathion,30 bit is lon, 30 bit is lat
     and 30 bit is time
     """
-    lat_interval, lon_interval, time_interval = (-90.0, 90.0), (-180.0, 180.0), (-180, 180)
+    lat_interval, lon_interval, time_interval = (-90.0, 90.0), (-180.0, 180.0), (-180.0, 180.0)
     spthash = []
-    bits = [ 16, 8, 4, 2, 1 ]
+    bits = [ 4, 2, 1 ]
     bit = 0
     ch = 0
     even = 0
@@ -59,20 +76,13 @@ def encode_spthash(latitude, longitude, time, precision=16):
                 time_interval = (time_interval[0], mid)
 
         even = even + 1
-        if bit < 4:
+        if bit < 2:
             bit += 1
         else:
             spthash += __base32[ch]
             bit = 0
             ch = 0
     return ''.join(spthash)
-
-
-#encode_day(90,180, time_coordinate(time.mktime(time.strptime("2012-12-21", "%Y-%m-%d"))))
-#encode_day(90,180, 180)
-#encode_day(-90,-180, -180)
-#encode_day(0,0, 0)
-
 
 def decode_spthash(spthash):
     """
@@ -82,7 +92,7 @@ def decode_spthash(spthash):
     even = 0
     for c in spthash:
         cd = __decodemap[c]
-        for mask in [16, 8, 4, 2, 1]:
+        for mask in [4, 2, 1]:
             if even % 3 == 0: # adds longitude info
                 lon_err /= 2
                 if cd & mask:
@@ -108,12 +118,17 @@ def decode_spthash(spthash):
     return lat, lon, time,lat_err, lon_err, time_err
 
 
-#decode_exactly("zzzzzzzzzzzzzzzz")
+def clut_spthash_range(arg):
+    l = 0
+    if isinstance(arg, str) and len(arg) >= 1:
+        l = len(spthash)
+    elif isinstance(arg, int) and arg >= 1:
+        l = arg
+    else:
+        print "param error"
+        return None
 
-
-def clut_spthash_range(spthash):
-    l = len(spthash)
-    bits = l * 5
+    bits = l * 3
     time = lon = lat = bits / 3
     bits = bits % 3
     if bits == 2:
@@ -121,9 +136,16 @@ def clut_spthash_range(spthash):
         lat = lat + 1
     elif bits == 1:
         lon = lon + 1
-    print("lon:" + str(180.0/(2**lon)) + " lat:" + str(360.0/(2**lat)) + " time:" + str(360.0/2**time))
+    #print("lon:" + str(180.0/(2**lon)) + " lat:" + str(360.0/(2**lat)) + " time:" + str(360.0/2**time))
+    return {"lon":360.0/(2**lon),"lat":180.0/(2**lat),"time":360.0/(2**time) }
     
 
-
-#clut_spthash_range("zzzzzzzzzzzzzzzz")
+def gen_all_range(year_range=10):
+    for i in range(31):
+		ret = clut_spthash_range(i)
+		if ret:
+			print("len:"+str(i))
+			print("lat:"+str(ret["lat"]) + " distance:"+str(ret["lat"]*111000))
+			print("lon:"+str(ret["lon"]) + " distance:"+str(ret["lon"]*111000))
+			print("time:"+str(ret["time"]) + " realtime:"+ str(ret["time"]*((year_range*356*86400)/360)))
 

@@ -49,4 +49,23 @@ code=encode_spthash_flex(23.023, 132.2344, 1496811929, "2018-06-01")
 print code
 print decode_spthash_flex(code, "2018-06-01")
 
-gen_all_range()
+print("==")
+code=encode_spthash_flex(30.23521, 120.17463, time.mktime(time.strptime("20161003021000", "%Y%m%d%H%M%S")), "2014-12-01", 12, 12)
+print code
+print decode_spthash_flex(code, "2014-12-01")
+
+code=encode_spthash_flex(30.23881, 120.18866, time.mktime(time.strptime("20160414120400", "%Y%m%d%H%M%S")), "2014-12-01", 12, 12)
+print code
+print decode_spthash_flex(code, "2014-12-01")
+
+
+print("==")
+code=encode_spthash_flex(120.17463,30.23521,  time.mktime(time.strptime("20161003021000", "%Y%m%d%H%M%S")), "2014-12-01")
+print code
+print decode_spthash_flex(code, "2014-12-01")
+
+code=encode_spthash_flex(120.18866,30.23881,  time.mktime(time.strptime("20160414120400", "%Y%m%d%H%M%S")), "2014-12-01")
+print code
+print decode_spthash_flex(code, "2014-12-01")
+
+#gen_all_range()
